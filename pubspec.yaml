@@ -1,0 +1,26 @@
+name: marina_pezvela
+description: Aplicación de gestión de mantenimientos de pedestales para Marina Pez Vela.
+publish_to: 'none' # No se publicará en pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Agrega aquí otros paquetes cuando empecemos con Supabase/SQLite
+  # supabase_flutter: ^2.5.6
+  # sqflite: ^2.3.3
+  # path: ^1.9.0
+  # uuid: ^4.4.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
