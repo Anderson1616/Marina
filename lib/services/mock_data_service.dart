@@ -7,13 +7,7 @@ class MockDataService {
   static final MockDataService _inst = MockDataService._internal();
   factory MockDataService() => _inst;
   MockDataService._internal() {
-    if (_pedestales.isEmpty) {
-      _pedestales.addAll(const [
-        Pedestal(id: '1', codigo: 'N-6', muelle: 'N', ubicacion: 'Muelle Norte 6'),
-        Pedestal(id: '2', codigo: 'N-7', muelle: 'N', ubicacion: 'Muelle Norte 7'),
-        Pedestal(id: '3', codigo: 'S-1', muelle: 'S', ubicacion: 'Muelle Sur 1'),
-      ]);
-    }
+    
   }
 
   final List<Pedestal> _pedestales = [];

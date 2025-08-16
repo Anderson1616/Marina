@@ -82,12 +82,25 @@ class _PantallaDetallePedestalState extends State<PantallaDetallePedestal> {
       '${f.year}-${f.month.toString().padLeft(2, '0')}-${f.day.toString().padLeft(2, '0')} '
       '${f.hour.toString().padLeft(2, '0')}:${f.minute.toString().padLeft(2, '0')}';
 
+  PreferredSizeWidget _appBar(Pedestal p) {
+    return AppBar(
+      titleSpacing: 0,
+      title: Row(
+        children: [
+          Image.asset('assets/images/marina_logo.png', height: 26),
+          const SizedBox(width: 10),
+          Text('Pedestal ${p.codigo}'),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = widget.pedestal;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Pedestal ${p.codigo}')),
+      appBar: _appBar(p),
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -112,7 +125,6 @@ class _PantallaDetallePedestalState extends State<PantallaDetallePedestal> {
                       labelText: 'Buscar por técnico',
                       hintText: 'Email o parte del email',
                       prefixIcon: Icon(Icons.person_search),
-                      border: OutlineInputBorder(),
                     ),
                     onChanged: (_) => _aplicarFiltros(),
                   ),
@@ -146,11 +158,41 @@ class _PantallaDetallePedestalState extends State<PantallaDetallePedestal> {
               ],
             ),
             const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (_fechaFiltro != null)
+                  Chip(
+                    label: Text(
+                      'Fecha: ${_fechaFiltro!.year}-${_fechaFiltro!.month.toString().padLeft(2, '0')}-${_fechaFiltro!.day.toString().padLeft(2, '0')}',
+                    ),
+                    onDeleted: () {
+                      setState(() => _fechaFiltro = null);
+                      _aplicarFiltros();
+                    },
+                  ),
+                if (_tecnicoCtrl.text.isNotEmpty)
+                  Chip(
+                    label: Text('Téc.: ${_tecnicoCtrl.text}'),
+                    onDeleted: () {
+                      _tecnicoCtrl.clear();
+                      _aplicarFiltros();
+                    },
+                  ),
+              ],
+            ),
             const Divider(height: 24),
 
             // =================== HISTORIAL ===================
-            const Text('Historial de mantenimientos',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            Row(
+              children: [
+                const Text('Historial de mantenimientos',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(width: 8),
+                Chip(label: Text('${_historial.length}')),
+              ],
+            ),
             const SizedBox(height: 8),
             Expanded(
               child: _historial.isEmpty
@@ -162,7 +204,8 @@ class _PantallaDetallePedestalState extends State<PantallaDetallePedestal> {
                         return Card(
                           child: ListTile(
                             title: Text('${tipoToText(m.tipo)} — ${_fmt(m.fecha)}'),
-                            subtitle: Text('${m.detalle}\nTécnico: ${m.tecnicoEmail}'),
+                            subtitle:
+                                Text('${m.detalle}\nTécnico: ${m.tecnicoEmail}'),
                             isThreeLine: true,
                           ),
                         );

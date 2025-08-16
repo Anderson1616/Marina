@@ -41,7 +41,7 @@ class _PantallaListaPedestalesState extends State<PantallaListaPedestales> {
   Future<void> _mostrarDialogoNuevoPedestal() async {
     final codigoCtrl = TextEditingController();
     final muelleCtrl = TextEditingController();
-    final ubicCtrl   = TextEditingController();
+    final ubicCtrl = TextEditingController();
 
     final ok = await showDialog<bool>(
       context: context,
@@ -112,8 +112,10 @@ class _PantallaListaPedestalesState extends State<PantallaListaPedestales> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Eliminar pedestal'),
-        content: Text('¿Seguro que deseas eliminar el pedestal ${p.codigo}? '
-            'Se borrará también su historial (mock).'),
+        content: Text(
+          '¿Seguro que deseas eliminar el pedestal ${p.codigo}? '
+          'Se borrará también su historial (mock).',
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
           FilledButton.tonal(
@@ -134,15 +136,32 @@ class _PantallaListaPedestalesState extends State<PantallaListaPedestales> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pedestales'),
-        actions: [
-          IconButton(onPressed: _logout, icon: const Icon(Icons.logout)),
+  PreferredSizeWidget _appBar() {
+    return AppBar(
+      titleSpacing: 0,
+      title: Row(
+        children: [
+          Image.asset('assets/images/marina_logo.png', height: 26),
+          const SizedBox(width: 10),
+          const Text('Pedestales'),
         ],
       ),
+      actions: [
+        IconButton(
+          tooltip: 'Cerrar sesión',
+          onPressed: _logout,
+          icon: const Icon(Icons.logout),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: _appBar(),
       body: Column(
         children: [
           Padding(
@@ -152,7 +171,6 @@ class _PantallaListaPedestalesState extends State<PantallaListaPedestales> {
               decoration: const InputDecoration(
                 labelText: 'Buscar por código (ej. N-6)',
                 prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
               ),
               onChanged: (_) => _cargar(),
             ),
@@ -168,28 +186,36 @@ class _PantallaListaPedestalesState extends State<PantallaListaPedestales> {
                         key: ValueKey(p.id),
                         direction: DismissDirection.endToStart,
                         background: Container(
-                          color: Colors.red.withOpacity(0.15),
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: const Icon(Icons.delete, color: Colors.red),
+                        // 👇 reemplazo de withOpacity por withValues
+                        color: Colors.red.withValues(alpha: 0.15),
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: const Icon(Icons.delete, color: Colors.red),
                         ),
+
                         confirmDismiss: (_) async {
                           await _confirmarEliminar(p);
                           // Evitamos que Dismissible quite el item automáticamente
                           return false;
                         },
-                        child: ListTile(
-                          title: Text(p.codigo),
-                          subtitle: Text(p.ubicacion ?? ''),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline),
-                            tooltip: 'Eliminar',
-                            onPressed: () => _confirmarEliminar(p),
-                          ),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PantallaDetallePedestal(pedestal: p),
+                        child: Card(
+                          child: ListTile(
+                            title: Text(
+                              p.codigo,
+                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                            subtitle: Text(p.ubicacion ?? ''),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete_outline),
+                              tooltip: 'Eliminar',
+                              onPressed: () => _confirmarEliminar(p),
+                              color: cs.error,
+                            ),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => PantallaDetallePedestal(pedestal: p),
+                              ),
                             ),
                           ),
                         ),

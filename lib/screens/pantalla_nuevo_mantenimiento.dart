@@ -19,6 +19,7 @@ class _PantallaNuevoMantenimientoState extends State<PantallaNuevoMantenimiento>
 
   Future<void> _guardar() async {
     if (_detalle.text.trim().isEmpty) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Escribe el detalle del trabajo')),
       );
@@ -65,7 +66,8 @@ class _PantallaNuevoMantenimientoState extends State<PantallaNuevoMantenimiento>
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<TipoIntervencion>(
-              value: _tipo,
+              // 👇 usar initialValue (no value)
+              initialValue: _tipo,
               decoration: const InputDecoration(
                 labelText: 'Tipo de intervención',
                 border: OutlineInputBorder(),
