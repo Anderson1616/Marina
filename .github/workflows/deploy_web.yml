@@ -26,9 +26,13 @@ jobs:
       - name: Build web (sirviendo bajo /Marina/)
         run: flutter build web --release --base-href "/Marina/"
 
+      - name: Copy 404.html for SPA routing
+        run: cp build/web/index.html build/web/404.html
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
           publish_branch: gh-pages
+
