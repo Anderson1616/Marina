@@ -4,6 +4,7 @@ import '../services/mock_data_service.dart';
 import '../models/pedestal.dart';
 import 'pantalla_detalle_pedestal.dart';
 import 'pantalla_login.dart';
+import 'pantalla_editar_pedestal.dart';
 
 class PantallaListaPedestales extends StatefulWidget {
   const PantallaListaPedestales({super.key});
@@ -13,18 +14,33 @@ class PantallaListaPedestales extends StatefulWidget {
 }
 
 class _PantallaListaPedestalesState extends State<PantallaListaPedestales> {
-  final _svc = MockDataService();
+  final mockDataService = MockDataService();
+  List<Pedestal> pedestales = [];
   final _buscar = TextEditingController();
-  List<Pedestal> _data = [];
 
   @override
   void initState() {
     super.initState();
-    _cargar();
+    pedestales = mockDataService.listarPedestales();
+    mockDataService.addListener(_onDataChanged);
+  }
+
+  @override
+  void dispose() {
+    mockDataService.removeListener(_onDataChanged);
+    super.dispose();
+  }
+
+  void _onDataChanged() {
+    setState(() {
+      pedestales = mockDataService.listarPedestales();
+    });
   }
 
   void _cargar() {
-    setState(() => _data = _svc.listarPedestales(filtro: _buscar.text));
+    setState(() {
+      pedestales = mockDataService.listarPedestales(filtro: _buscar.text);
+    });
   }
 
   Future<void> _logout() async {
@@ -70,8 +86,8 @@ class _PantallaListaPedestalesState extends State<PantallaListaPedestales> {
               TextField(
                 controller: ubicCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Ubicación (opcional)',
-                  hintText: 'Ej. Muelle Norte 6',
+                  labelText: 'Barco (opcional)',
+                  hintText: 'Nombre del barco actual',
                 ),
               ),
             ],
@@ -87,12 +103,12 @@ class _PantallaListaPedestalesState extends State<PantallaListaPedestales> {
     if (ok != true) return;
 
     try {
-      await _svc.crearPedestal(
+      await mockDataService.crearPedestal(
         codigo: codigoCtrl.text,
         muelle: muelleCtrl.text,
-        ubicacion: ubicCtrl.text,
+        barco: ubicCtrl.text,
       );
-      _cargar();
+      // _cargar();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pedestal creado')),
@@ -127,8 +143,8 @@ class _PantallaListaPedestalesState extends State<PantallaListaPedestales> {
     );
 
     if (ok == true) {
-      await _svc.eliminarPedestal(p.id);
-      _cargar();
+      await mockDataService.eliminarPedestal(p.id);
+      // _cargar();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Eliminado ${p.codigo}')),
@@ -176,12 +192,12 @@ class _PantallaListaPedestalesState extends State<PantallaListaPedestales> {
             ),
           ),
           Expanded(
-            child: _data.isEmpty
+            child: pedestales.isEmpty
                 ? const Center(child: Text('Sin pedestales'))
                 : ListView.builder(
-                    itemCount: _data.length,
+                    itemCount: pedestales.length,
                     itemBuilder: (_, i) {
-                      final p = _data[i];
+                      final p = pedestales[i];
                       return Dismissible(
                         key: ValueKey(p.id),
                         direction: DismissDirection.endToStart,
@@ -204,12 +220,32 @@ class _PantallaListaPedestalesState extends State<PantallaListaPedestales> {
                               p.codigo,
                               style: const TextStyle(fontWeight: FontWeight.w700),
                             ),
-                            subtitle: Text(p.ubicacion ?? ''),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete_outline),
-                              tooltip: 'Eliminar',
-                              onPressed: () => _confirmarEliminar(p),
-                              color: cs.error,
+                            subtitle: Text(p.barco),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // botón eliminar existente
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline),
+                                  tooltip: 'Eliminar',
+                                  onPressed: () => _confirmarEliminar(p),
+                                  color: cs.error,
+                                ),
+                                // nuevo botón editar
+                                IconButton(
+                                  icon: Icon(Icons.edit, color: Theme.of(context).primaryColor),
+                                  tooltip: 'Editar pedestal',
+                                  onPressed: () async {
+                                    // Navegar a la pantalla de edición
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => PantallaEditarPedestal(pedestal: p),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                             onTap: () => Navigator.push(
                               context,

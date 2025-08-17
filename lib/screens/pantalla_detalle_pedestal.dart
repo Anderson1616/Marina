@@ -18,19 +18,37 @@ class _PantallaDetallePedestalState extends State<PantallaDetallePedestal> {
   // Datos
   List<Mantenimiento> _historialBase = [];
   List<Mantenimiento> _historial = [];
+  late Pedestal _pedestal;
 
   // Filtros
   final _tecnicoCtrl = TextEditingController();
+  final _barcoCtrl = TextEditingController();
   DateTime? _fechaFiltro;
+  String _filtroBarco = '';
 
   @override
   void initState() {
     super.initState();
+    _pedestal = widget.pedestal;
     _cargar();
   }
 
+  @override
+  void dispose() {
+    _tecnicoCtrl.dispose();
+    _barcoCtrl.dispose();
+    super.dispose();
+  }
+
   void _cargar() {
-    _historialBase = _svc.mantenimientosPorPedestal(widget.pedestal.id);
+    final updated = _svc.getPedestalById(widget.pedestal.id);
+    if (updated != null) {
+      // actualizar la referencia local
+      setState(() {
+        _pedestal = updated;
+      });
+    }
+    _historialBase = _svc.mantenimientosPorPedestal(_pedestal.id);
     _aplicarFiltros();
   }
 
@@ -41,6 +59,7 @@ class _PantallaDetallePedestalState extends State<PantallaDetallePedestal> {
     final res = _historialBase.where((m) {
       bool okTecnico = true;
       bool okFecha = true;
+      bool okBarco = true;
 
       if (t.isNotEmpty) {
         okTecnico = m.tecnicoEmail.toLowerCase().contains(t);
@@ -52,7 +71,12 @@ class _PantallaDetallePedestalState extends State<PantallaDetallePedestal> {
             m.fecha.day == f.day;
       }
 
-      return okTecnico && okFecha;
+      if (_filtroBarco.isNotEmpty) {
+        final nombreBarco = (m.barco.isNotEmpty ? m.barco : _pedestal.barco).toLowerCase();
+        okBarco = nombreBarco.contains(_filtroBarco);
+      }
+
+      return okTecnico && okFecha && okBarco;
     }).toList()
       ..sort((a, b) => b.fecha.compareTo(a.fecha));
 
@@ -74,7 +98,11 @@ class _PantallaDetallePedestalState extends State<PantallaDetallePedestal> {
 
   void _limpiarFiltros() {
     _tecnicoCtrl.clear();
-    setState(() => _fechaFiltro = null);
+    _barcoCtrl.clear();
+    setState(() {
+      _fechaFiltro = null;
+      _filtroBarco = '';
+    });
     _aplicarFiltros();
   }
 
@@ -97,7 +125,7 @@ class _PantallaDetallePedestalState extends State<PantallaDetallePedestal> {
 
   @override
   Widget build(BuildContext context) {
-    final p = widget.pedestal;
+    final p = _pedestal;
 
     return Scaffold(
       appBar: _appBar(p),
@@ -106,9 +134,9 @@ class _PantallaDetallePedestalState extends State<PantallaDetallePedestal> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Ubicación: ${p.ubicacion ?? 'N/D'}'),
+            Text('Barco: ${p.barco.isNotEmpty ? p.barco : 'N/D'}'),
             const SizedBox(height: 6),
-            Text('Muelle: ${p.muelle ?? 'N/D'}'),
+            Text('Muelle: ${p.muelle?.toString() ?? 'N/D'}'),
             const Divider(height: 24),
 
             // =================== FILTROS ===================
@@ -194,6 +222,26 @@ class _PantallaDetallePedestalState extends State<PantallaDetallePedestal> {
               ],
             ),
             const SizedBox(height: 8),
+
+            // Campo de filtro por barco
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: TextField(
+                controller: _barcoCtrl,
+                decoration: InputDecoration(
+                  prefixIcon: Icon(Icons.directions_boat),
+                  hintText: 'Filtrar mantenimientos por barco',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                ),
+                onChanged: (v) {
+                  setState(() {
+                    _filtroBarco = v.trim().toLowerCase();
+                  });
+                  _aplicarFiltros();
+                },
+              ),
+            ),
+
             Expanded(
               child: _historial.isEmpty
                   ? const Center(child: Text('No hay registros con esos filtros'))
@@ -205,7 +253,7 @@ class _PantallaDetallePedestalState extends State<PantallaDetallePedestal> {
                           child: ListTile(
                             title: Text('${tipoToText(m.tipo)} — ${_fmt(m.fecha)}'),
                             subtitle:
-                                Text('${m.detalle}\nTécnico: ${m.tecnicoEmail}'),
+                                Text('${m.detalle}\nTécnico: ${m.tecnicoEmail}\nBarco: ${m.barco.isNotEmpty ? m.barco : p.barco}'),
                             isThreeLine: true,
                           ),
                         );

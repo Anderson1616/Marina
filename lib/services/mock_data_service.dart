@@ -1,9 +1,10 @@
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import '../models/pedestal.dart';
 import '../models/mantenimiento.dart';
 import 'auth_service.dart';
 
-class MockDataService {
+class MockDataService extends ChangeNotifier {
   static final MockDataService _inst = MockDataService._internal();
   factory MockDataService() => _inst;
   MockDataService._internal() {
@@ -35,6 +36,7 @@ class MockDataService {
     required TipoIntervencion tipo,
     required String detalle,
     DateTime? fecha,
+    String? barco,
   }) async {
     final email = AuthService.usuarioActual?.email ?? 'tecnico@demo.cr';
     final id = (Random().nextInt(1 << 31)).toString();
@@ -45,7 +47,9 @@ class MockDataService {
       tecnicoEmail: email,
       tipo: tipo,
       detalle: detalle,
+      barco: barco ?? '',
     ));
+    notifyListeners();
     await Future.delayed(const Duration(milliseconds: 150));
   }
 
@@ -55,7 +59,7 @@ class MockDataService {
   Future<Pedestal> crearPedestal({
     required String codigo,
     String? muelle,
-    String? ubicacion,
+    String? barco
   }) async {
     final cod = codigo.trim().toUpperCase();
     if (cod.isEmpty) {
@@ -70,12 +74,13 @@ class MockDataService {
     }
 
     final nuevo = Pedestal(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      id: (Random().nextInt(1 << 31)).toString(),
       codigo: cod,
-      muelle: (muelle ?? '').trim().isEmpty ? null : muelle!.trim(),
-      ubicacion: (ubicacion ?? '').trim().isEmpty ? null : ubicacion!.trim(),
+      muelle: (muelle == null || muelle.trim().isEmpty) ? null : int.tryParse(muelle.trim()),
+      barco: (barco ?? '').trim(),
     );
     _pedestales.add(nuevo);
+    notifyListeners();
     await Future.delayed(const Duration(milliseconds: 150));
     return nuevo;
   }
@@ -84,6 +89,24 @@ class MockDataService {
   Future<void> eliminarPedestal(String pedestalId) async {
     _mantenimientos.removeWhere((m) => m.pedestalId == pedestalId);
     _pedestales.removeWhere((p) => p.id == pedestalId);
+    notifyListeners();
     await Future.delayed(const Duration(milliseconds: 100));
+  }
+
+  // Agrega o actualiza un pedestal existente por id
+  void updatePedestal(Pedestal updated) {
+    final index = _pedestales.indexWhere((p) => p.id == updated.id);
+    if (index != -1) {
+      _pedestales[index] = updated;
+      notifyListeners();
+    }
+  }
+
+  // Obtener pedestal por id
+  Pedestal? getPedestalById(String id) {
+    for (var p in _pedestales) {
+      if (p.id == id) return p;
+    }
+    return null;
   }
 }

@@ -15,13 +15,40 @@ class Mantenimiento {
   final String tecnicoEmail;
   final TipoIntervencion tipo;
   final String detalle;
+  String barco; // barco que estaba en el pedestal cuando se registró el mantenimiento
 
-  const Mantenimiento({
-    required this.id,
+  Mantenimiento({
+    String? id,
     required this.pedestalId,
     required this.fecha,
-    required this.tecnicoEmail,
+    String? tecnicoEmail,
     required this.tipo,
     required this.detalle,
-  });
+    this.barco = '',
+  })  : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        tecnicoEmail = tecnicoEmail ?? '';
+
+  factory Mantenimiento.fromJson(Map<String, dynamic> json) {
+    return Mantenimiento(
+      id: json['id'],
+      pedestalId: json['pedestalId'],
+      fecha: DateTime.parse(json['fecha']),
+      tecnicoEmail: json['tecnicoEmail'],
+      tipo: TipoIntervencion.values.firstWhere((e) => e.toString() == 'TipoIntervencion.${json['tipo']}'),
+      detalle: json['detalle'],
+      barco: json['barco'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'pedestalId': pedestalId,
+      'fecha': fecha.toIso8601String(),
+      'tecnicoEmail': tecnicoEmail,
+      'tipo': tipo.toString().split('.').last,
+      'detalle': detalle,
+      'barco': barco,
+    };
+  }
 }

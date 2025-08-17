@@ -25,11 +25,21 @@ class _PantallaNuevoMantenimientoState extends State<PantallaNuevoMantenimiento>
       );
       return;
     }
+    // antes de guardar el mantenimiento:
+    final mantenimiento = Mantenimiento(
+      pedestalId: widget.pedestal.id,
+      tipo: _tipo,
+      detalle: _detalle.text.trim(),
+      fecha: _fecha,
+    );
+    mantenimiento.barco = widget.pedestal.barco;
+    // luego llamar al servicio para agregarlo
     await _svc.agregarMantenimiento(
       pedestalId: widget.pedestal.id,
       tipo: _tipo,
       detalle: _detalle.text.trim(),
       fecha: _fecha,
+      barco: widget.pedestal.barco,
     );
     if (!mounted) return;
     Navigator.pop(context);
