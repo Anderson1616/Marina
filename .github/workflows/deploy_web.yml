@@ -1,0 +1,34 @@
+name: Deploy Flutter Web to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]     # Cambia 'main' si tu rama principal se llama distinto
+  workflow_dispatch:       # Permite ejecutarlo a mano desde la pestaña Actions
+
+permissions:
+  contents: write          # Necesario para publicar en la rama gh-pages
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable  # usa el canal estable de Flutter
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build web (sirviendo bajo /Marina/)
+        run: flutter build web --release --base-href "/Marina/"
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+          publish_branch: gh-pages
