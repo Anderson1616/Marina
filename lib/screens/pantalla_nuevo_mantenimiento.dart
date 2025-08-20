@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/pedestal.dart';
 import '../models/mantenimiento.dart';
+import '../models/pieza.dart';
 import '../services/mock_data_service.dart';
 
 class PantallaNuevoMantenimiento extends StatefulWidget {
@@ -16,6 +17,15 @@ class _PantallaNuevoMantenimientoState extends State<PantallaNuevoMantenimiento>
   final _detalle = TextEditingController();
   TipoIntervencion _tipo = TipoIntervencion.cambio;
   DateTime _fecha = DateTime.now();
+  List<Pieza> _piezas = [];
+  String? _selectedPiezaId;
+  final _nombrePiezaCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _piezas = MockDataService().piezasDePedestal(widget.pedestal.id);
+  }
 
   Future<void> _guardar() async {
     if (_detalle.text.trim().isEmpty) {
@@ -25,14 +35,7 @@ class _PantallaNuevoMantenimientoState extends State<PantallaNuevoMantenimiento>
       );
       return;
     }
-    // antes de guardar el mantenimiento:
-    final mantenimiento = Mantenimiento(
-      pedestalId: widget.pedestal.id,
-      tipo: _tipo,
-      detalle: _detalle.text.trim(),
-      fecha: _fecha,
-    );
-    mantenimiento.barco = widget.pedestal.barco;
+    // No crear objeto Mantenimiento local, se usa el servicio para crear y sincronizar
     // luego llamar al servicio para agregarlo
     await _svc.agregarMantenimiento(
       pedestalId: widget.pedestal.id,
@@ -40,6 +43,8 @@ class _PantallaNuevoMantenimientoState extends State<PantallaNuevoMantenimiento>
       detalle: _detalle.text.trim(),
       fecha: _fecha,
       barco: widget.pedestal.barco,
+      piezaId: _selectedPiezaId,
+      piezaNombre: _nombrePiezaCtrl.text.isNotEmpty ? _nombrePiezaCtrl.text : null,
     );
     if (!mounted) return;
     Navigator.pop(context);
@@ -57,6 +62,13 @@ class _PantallaNuevoMantenimientoState extends State<PantallaNuevoMantenimiento>
         _fecha = DateTime(picked.year, picked.month, picked.day, _fecha.hour, _fecha.minute);
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _nombrePiezaCtrl.dispose();
+    _detalle.dispose();
+    super.dispose();
   }
 
   @override
@@ -90,6 +102,23 @@ class _PantallaNuevoMantenimientoState extends State<PantallaNuevoMantenimiento>
               onChanged: (v) => setState(() => _tipo = v ?? TipoIntervencion.cambio),
             ),
             const SizedBox(height: 12),
+            if (_tipo == TipoIntervencion.adicion) ...[
+              TextField(controller: _nombrePiezaCtrl, decoration: const InputDecoration(labelText: 'Nombre de pieza (nueva)')),
+            ],
+            if (_tipo == TipoIntervencion.eliminacion || _tipo == TipoIntervencion.cambio) ...[
+              DropdownButtonFormField<String?>(
+                value: _selectedPiezaId,
+                items: [
+                  const DropdownMenuItem(value: null, child: Text('Seleccionar pieza (opcional)')),
+                  ..._piezas.map((pz) => DropdownMenuItem(value: pz.id, child: Text(pz.nombre))).toList(),
+                ],
+                onChanged: (v) => setState(() => _selectedPiezaId = v),
+                decoration: const InputDecoration(labelText: 'Pieza existente'),
+              ),
+              if (_tipo == TipoIntervencion.cambio)
+                TextField(controller: _nombrePiezaCtrl, decoration: const InputDecoration(labelText: 'Nuevo nombre de pieza')),
+            ],
+            const SizedBox(height: 12),
             TextField(
               controller: _detalle,
               maxLines: 4,
@@ -111,3 +140,4 @@ class _PantallaNuevoMantenimientoState extends State<PantallaNuevoMantenimiento>
     );
   }
 }
+// Verificar que no existe etiqueta 'Ubicación' en esta pantalla; no se requieren cambios.

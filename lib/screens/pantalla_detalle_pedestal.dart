@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/pedestal.dart';
 import '../models/mantenimiento.dart';
+import '../models/pieza.dart';
 import '../services/mock_data_service.dart';
 import 'pantalla_nuevo_mantenimiento.dart';
 
@@ -14,11 +15,11 @@ class PantallaDetallePedestal extends StatefulWidget {
 
 class _PantallaDetallePedestalState extends State<PantallaDetallePedestal> {
   final _svc = MockDataService();
+  late Pedestal _pedestal;
 
   // Datos
   List<Mantenimiento> _historialBase = [];
   List<Mantenimiento> _historial = [];
-  late Pedestal _pedestal;
 
   // Filtros
   final _tecnicoCtrl = TextEditingController();
@@ -29,25 +30,27 @@ class _PantallaDetallePedestalState extends State<PantallaDetallePedestal> {
   @override
   void initState() {
     super.initState();
-    _pedestal = widget.pedestal;
+    _pedestal = _svc.getPedestalById(widget.pedestal.id) ?? widget.pedestal;
+    _svc.addListener(_onData);
     _cargar();
+  }
+
+  void _onData() {
+    setState(() {
+      _pedestal = _svc.getPedestalById(widget.pedestal.id) ?? _pedestal;
+      _cargar();
+    });
   }
 
   @override
   void dispose() {
+    _svc.removeListener(_onData);
     _tecnicoCtrl.dispose();
     _barcoCtrl.dispose();
     super.dispose();
   }
 
   void _cargar() {
-    final updated = _svc.getPedestalById(widget.pedestal.id);
-    if (updated != null) {
-      // actualizar la referencia local
-      setState(() {
-        _pedestal = updated;
-      });
-    }
     _historialBase = _svc.mantenimientosPorPedestal(_pedestal.id);
     _aplicarFiltros();
   }
@@ -249,11 +252,23 @@ class _PantallaDetallePedestalState extends State<PantallaDetallePedestal> {
                       itemCount: _historial.length,
                       itemBuilder: (_, i) {
                         final m = _historial[i];
+                        // Determinar información de la pieza asociada al mantenimiento
+                        final piezasDelPedestal = MockDataService().piezasDePedestal(p.id);
+                        String piezaInfo = '';
+                        if (m.piezaNombre != null && m.piezaNombre!.isNotEmpty) {
+                          piezaInfo = m.piezaNombre!;
+                        } else if (m.piezaId != null) {
+                          final idx = piezasDelPedestal.indexWhere((pz) => pz.id == m.piezaId);
+                          if (idx != -1) piezaInfo = piezasDelPedestal[idx].nombre;
+                        }
                         return Card(
                           child: ListTile(
                             title: Text('${tipoToText(m.tipo)} — ${_fmt(m.fecha)}'),
-                            subtitle:
-                                Text('${m.detalle}\nTécnico: ${m.tecnicoEmail}\nBarco: ${m.barco.isNotEmpty ? m.barco : p.barco}'),
+                            subtitle: Text(
+                              '${m.detalle}\nTécnico: ${m.tecnicoEmail}' +
+                                  (piezaInfo.isNotEmpty ? '\nPieza: $piezaInfo' : '') +
+                                  '\nBarco: ${m.barco.isNotEmpty ? m.barco : p.barco}',
+                            ),
                             isThreeLine: true,
                           ),
                         );

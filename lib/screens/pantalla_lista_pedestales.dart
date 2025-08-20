@@ -5,6 +5,8 @@ import '../models/pedestal.dart';
 import 'pantalla_detalle_pedestal.dart';
 import 'pantalla_login.dart';
 import 'pantalla_editar_pedestal.dart';
+import 'pantalla_piezas_pedestal.dart';
+import 'pantalla_nuevo_pedestal.dart';
 
 class PantallaListaPedestales extends StatefulWidget {
   const PantallaListaPedestales({super.key});
@@ -28,6 +30,7 @@ class _PantallaListaPedestalesState extends State<PantallaListaPedestales> {
   @override
   void dispose() {
     mockDataService.removeListener(_onDataChanged);
+    _buscar.dispose();
     super.dispose();
   }
 
@@ -51,75 +54,6 @@ class _PantallaListaPedestalesState extends State<PantallaListaPedestales> {
       MaterialPageRoute(builder: (_) => const PantallaLogin()),
       (_) => false,
     );
-  }
-
-  // --------- NUEVO: diálogo "Añadir pedestal" ----------
-  Future<void> _mostrarDialogoNuevoPedestal() async {
-    final codigoCtrl = TextEditingController();
-    final muelleCtrl = TextEditingController();
-    final ubicCtrl = TextEditingController();
-
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Nuevo pedestal'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: codigoCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Código (ej. N-6)',
-                  hintText: 'Formato sugerido: LETRA-NÚMERO',
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: muelleCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Muelle (opcional)',
-                  hintText: 'N / S / Este / Oeste',
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: ubicCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Barco (opcional)',
-                  hintText: 'Nombre del barco actual',
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Guardar')),
-        ],
-      ),
-    );
-
-    if (ok != true) return;
-
-    try {
-      await mockDataService.crearPedestal(
-        codigo: codigoCtrl.text,
-        muelle: muelleCtrl.text,
-        barco: ubicCtrl.text,
-      );
-      // _cargar();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pedestal creado')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      final msg = e.toString().replaceFirst('Exception: ', '');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
-    }
   }
 
   // --------- NUEVO: confirmación de eliminación ----------
@@ -245,6 +179,14 @@ class _PantallaListaPedestalesState extends State<PantallaListaPedestales> {
                                     );
                                   },
                                 ),
+                                // nuevo botón ver piezas
+                                IconButton(
+                                  icon: Icon(Icons.remove_red_eye_outlined, color: Theme.of(context).primaryColor),
+                                  tooltip: 'Ver piezas',
+                                  onPressed: () {
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => PantallaPiezasPedestal(pedestal: p)));
+                                  },
+                                ),
                               ],
                             ),
                             onTap: () => Navigator.push(
@@ -262,9 +204,15 @@ class _PantallaListaPedestalesState extends State<PantallaListaPedestales> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _mostrarDialogoNuevoPedestal,
         icon: const Icon(Icons.add),
         label: const Text('Añadir'),
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PantallaNuevoPedestal()),
+          );
+          // la lista se actualizará automáticamente por el listener del servicio
+        },
       ),
     );
   }
